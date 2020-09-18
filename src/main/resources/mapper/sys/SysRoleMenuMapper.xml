@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.soft.launch.modules.sys.mapper.SysRoleMenuMapper">
+
+    <insert id="updateRolePermission">
+        insert into sys_role_menu(id,rid,tid) values
+        <foreach collection="rms" index="index" item="it" separator=",">
+            (#{it.id},#{it.rid},#{it.tid})
+        </foreach>
+    </insert>
+</mapper>

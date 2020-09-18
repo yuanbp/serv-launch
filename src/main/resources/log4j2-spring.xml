@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- status用来指定log4j本身的打印日志的级别. -->
+<!-- monitorinterval用于指定log4j自动重新配置的监测间隔时间，单位是s,最小是5s. -->
+<configuration status="OFF">
+    <Properties>
+        <!-- 复用需修改 -->
+        <Property name="PROJECT_NAME">serv_launch</Property>
+        <Property name="LOG_HOME">${sys:user.home}/logs/${PROJECT_NAME}</Property>
+        <Property name="CONSOLE_LOG_PATTERN">
+            <!-- 日期 日志级别 线程 输出日志信息的类,方法,行数 日志信息 换行 -->
+            %d %p [%t] %l: %m %n
+        </Property>
+        <Property name="FILE_LOG_PATTERN">
+            %d %p [%t] %l: %m %n
+        </Property>
+        <Property name="ROOT_LOG_LEVEL">info</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${sys:CONSOLE_LOG_PATTERN}"/>
+        </Console>
+
+        <!--处理DEBUG级别的日志，并把该日志放到logs/debug.log文件中-->
+        <!--打印出DEBUG级别日志，每次大小超过size，则这size大小的日志会自动存入按年份-月份建立的文件夹下面并进行压缩，作为存档-->
+        <RollingRandomAccessFile name="allLog" fileName="${LOG_HOME}/${PROJECT_NAME}_all.log"
+                                 filePattern="${LOG_HOME}/$${date:yyyy-MM}/${PROJECT_NAME}_all-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${sys:FILE_LOG_PATTERN}"/>
+            <!--
+                不设置任何filters 则记录从 root level 所有日志
+                如果有多个过滤器 前面的过滤器需设置 onMismatch="NEUTRAL" 可以让日志经过后续的过滤器 否则后面过滤器会失效
+                最后一个过滤器建议设置 onMismatch="DENY", 不然日志就输出了。
+            -->
+            <Filters>
+                <!-- 从大到小：error, warn, info, debug, trace -->
+                <LevelRangeFilter minLevel="error" maxLevel="debug" onMatch="ACCEPT" onMismatch="DENY" />
+            </Filters>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="15 MB"/>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="15"/>
+        </RollingRandomAccessFile>
+
+        <!--处理error级别的日志，并把该日志放到logs/error.log文件中-->
+        <RollingRandomAccessFile name="errLog" fileName="${LOG_HOME}/${PROJECT_NAME}_error.log"
+                                 filePattern="${LOG_HOME}/$${date:yyyy-MM}/${PROJECT_NAME}_error-%d{yyyy-MM-dd}-%i.log.gz">
+            <ThresholdFilter level="error" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${sys:FILE_LOG_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="15 MB"/>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="15"/>
+        </RollingRandomAccessFile>
+    </Appenders>
+
+    <Loggers>
+        <AsyncRoot level="${ROOT_LOG_LEVEL}">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="allLog"/>
+            <AppenderRef ref="errLog" level="error"/>
+        </AsyncRoot>
+
+        <!--过滤掉spring和hibernate的一些无用的debug信息-->
+        <logger name="org.springframework" level="INFO"/>
+
+        <!-- mybatis loggers -->
+        <logger name="org.mybatis" level="INFO"/>
+        <logger name="com.ibatis" level="DEBUG" />
+        <logger name="com.ibatis.common.jdbc.SimpleDataSource" level="DEBUG" />
+        <logger name="com.ibatis.common.jdbc.ScriptRunner" level="DEBUG" />
+        <logger name="com.ibatis.sqlmap.engine.impl.SqlMapClientDelegate" level="DEBUG" />
+
+        <!-- sql loggers -->
+        <logger name="java.sql.Connection" level="DEBUG"  additivity="true"/>
+        <logger name="java.sql.Statement" level="DEBUG" additivity="true" />
+        <logger name="java.sql.PreparedStatement" level="=debug,stdout"  additivity="true"/>
+        <logger name="java.sql.ResultSet" level="DEBUG"  additivity="true"/>
+
+        <Logger name="org.soft" level="debug"/>
+        <Logger name="org.soft.launch.modules.*.mapper" level="debug">
+            <AppenderRef ref="Console"/>
+        </Logger>
+    </Loggers>
+</configuration>
